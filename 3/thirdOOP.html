@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Студенческий портал -- Лента событий</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; }
+    #feed { display: flex; flex-direction: column; gap: 1rem; }
+
+    .news-card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .news-card:hover { background: #f5f5f5; }
+
+    .news-card__badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #e0e7ff;
+      color: #3730a3;
+      margin-bottom: 0.5rem;
+    }
+    
+    .news-card[data-type="deadline"] .news-card__badge { background: #fee2e2; color: #991b1b; }
+    .news-card[data-type="meeting"]  .news-card__badge { background: #dcfce7; color: #166534; }
+
+    .news-card__title { margin: 0.25rem 0; font-size: 1.1rem; }
+    .news-card__date  { color: #666; font-size: 0.9rem; }
+
+    
+    .news-card__details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .news-card--expanded .news-card__details {
+      max-height: 100px;
+      margin-top: 0.75rem;
+    }
+
+    .news-card__dismiss {
+      margin-top: 0.75rem;
+      padding: 4px 10px;
+      border: 1px solid #bbb;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .news-card__dismiss:hover { background: #eee; }
+  </style>
+</head>
+<body>
+
+<h1>Лента событий</h1>
+<div id="feed"></div>
+
+<script>
+
+//1 & 2
+
+class EventCard {
+  static TYPE_LABELS = {
+    lecture: 'Лекция',
+    deadline: 'Дедлайн',
+    meeting: 'Встреча',
+  };
+
+  constructor(title, date, type) {
+    this.title = title;
+    this.date = date;
+    this.type = type;
+    this.element = null;
+  }
+
+  createTemplate() {
+    const label = EventCard.TYPE_LABELS[this.type] ?? 'Событие';
+    return `
+      <article class="news-card" data-type="${this.type}">
+        <span class="news-card__badge">${label}</span>
+        <h3 class="news-card__title">${this.title}</h3>
+        <time class="news-card__date">${this.date}</time>
+        <div class="news-card__details">
+          <p>Подробности события «${this.title}» появятся здесь.</p>
+        </div>
+      </article>
+    `;
+  }
+
+  createElement() {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.createTemplate().trim();
+    this.element = wrapper.firstElementChild;
+    return this.element;
+  }
+
+  render(container, options = {}) {
+    this.createElement();
+    container.appendChild(this.element);
+    this.addEventListeners?.(options);
+    console.log(`[EventCard] Карточка "${this.title}" отрендерена в контейнер`);
+  }
+
+  addEventListeners(options = {}) {
+    const { onDismiss } = options;
+
+    //Клик по всей карточке
+    this.element.addEventListener('click', () => {
+      this.element.classList.toggle('news-card--expanded');
+    });
+
+    //Кнопка "Скрыть"
+    if (typeof onDismiss === 'function') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'news-card__dismiss';
+      btn.textContent = 'Скрыть';
+      
+      btn.addEventListener('click', (event) => {
+        event.stopPropagation(); //Чтобы клик по кнопке не разворачивал карточку
+        onDismiss(this);
+      });
+      
+      this.element.appendChild(btn);
+    }
+  }
+}
+
+
+
+//Демо
+
+const feed = document.querySelector('#feed');
+
+const events = [
+  new EventCard('Лекция по JavaScript', '03.11.2026', 'lecture'),
+  new EventCard('Сдать курсовую работу', '10.11.2026', 'deadline'),
+  new EventCard('Встреча с куратором', '05.11.2026', 'meeting'),
+];
+
+console.log("Демо евенткарда");
+
+events.forEach(card => {
+  card.render(feed, {
+    onDismiss: (c) => {
+      console.log(`[Событие] Пользователь скрыл карточку: "${c.title}"`);
+      c.element.remove();
+    }
+  });
+});
+
+console.log("Все карточки добавлены на страницу");
+</script>
+
+</body>
+</html>
